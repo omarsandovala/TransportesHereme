@@ -264,9 +264,9 @@
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
-        // CÓDIGO SIMPLIFICADO - SOLUCIÓN DEFINITIVA
-        const SUPABASE_URL = 'https://cswjdvjlfztewtmkrxsh.supabase.co';
-        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNzd2pkdmpsZnp0ZXd0bWtyeHNoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE2NDg0ODEsImV4cCI6MjA2NzIyNDQ4MX0.z0C2PtfkvYwIYfFjnFmdRicn_Jfqyq_SbCHKycHBX-4';
+        // CONEXIÓN A SUPABASE ACTUALIZADA
+        const SUPABASE_URL = 'https://jrbluqwjmjsfoezzmjno.supabase.co';
+        const SUPABASE_KEY = 'sb_publishable_Aw4gC43MsdZBMcTUnFT9Kg_hvfvDVHH';
         
         let supabaseClient;
 
@@ -274,7 +274,7 @@
         function initializeSupabase() {
             if (typeof window.supabase !== 'undefined' && !supabaseClient) {
                 supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-                console.log('Supabase inicializado correctamente');
+                console.log('Supabase inicializado correctamente con la nueva conexión');
                 return true;
             }
             return false;
