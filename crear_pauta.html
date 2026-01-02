@@ -45,6 +45,44 @@
       margin: 0 auto;
     }
 
+    /* Botón Volver */
+    .btn-volver {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      background-color: var(--color-primary);
+      color: white;
+      border: none;
+      border-radius: var(--border-radius);
+      padding: 10px 20px;
+      cursor: pointer;
+      font-size: 1rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      z-index: 1000;
+      box-shadow: var(--box-shadow);
+      transition: var(--transition);
+    }
+
+    .btn-volver:hover {
+      background-color: #1a365d;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    @media (max-width: 768px) {
+      .btn-volver {
+        position: relative;
+        top: 0;
+        left: 0;
+        margin-bottom: 15px;
+        width: 100%;
+        justify-content: center;
+      }
+    }
+
     .header {
       text-align: center;
       margin-bottom: 30px;
@@ -631,6 +669,15 @@
         justify-content: center;
       }
 
+      .btn-volver {
+        position: relative;
+        top: 0;
+        left: 0;
+        margin-bottom: 15px;
+        width: 100%;
+        justify-content: center;
+      }
+
       .btn-group {
         flex-direction: column;
       }
@@ -690,6 +737,10 @@
         display: none;
       }
       
+      .btn-volver {
+        display: none;
+      }
+      
       .page-break {
         border-top: 1px solid #000;
       }
@@ -701,6 +752,11 @@
   </style>
 </head>
 <body>
+
+<!-- Botón Volver -->
+<button class="btn-volver" onclick="volverPaginaAnterior()">
+  <i class="fas fa-arrow-left"></i> Volver
+</button>
 
 <div class="app-container">
   <div class="header">
@@ -761,8 +817,13 @@
         <td><input type="text" id="empresa_asociada" value="SIGMA" readonly style="background-color: #f0f0f0;"></td>
       </tr>
       <tr>
-        <td class="label">PROXIMA MANTENCIÓN:</td>
-        <td colspan="3"><input type="date" id="proxima_mantencion" style="width: 100%;"></td>
+        <td class="label">PRÓXIMA MANTENCIÓN:</td>
+        <td colspan="3">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <input type="number" id="proxima_mantencion_km" min="0" step="1" style="flex: 1;">
+            <span style="font-weight: bold; white-space: nowrap;">KM</span>
+          </div>
+        </td>
       </tr>
     </table>
 
@@ -1071,6 +1132,17 @@
 </div>
 
 <script>
+  // Función para volver a la página anterior
+  function volverPaginaAnterior() {
+    // Intentar volver en el historial del navegador
+    if (window.history.length > 1) {
+      window.history.back();
+    } else {
+      // Si no hay historial, redirigir a una página por defecto
+      window.location.href = 'index.html'; // Cambia 'index.html' por la URL de tu página principal
+    }
+  }
+
   // Configuración de Supabase
   const SUPABASE_URL = 'https://jrbluqwjmjsfoezzmjno.supabase.co';
   const SUPABASE_KEY = 'sb_publishable_Aw4gC43MsdZBMcTUnFT9Kg_hvfvDVHH';
@@ -1294,7 +1366,6 @@
       // Poblar selects
       poblarSelectMecanicos();
       poblarSelectPatentes();
-      poblarSelectProximaMantencion();
       
       console.log('Datos cargados:', {
         mecanicos: mecanicos.length,
@@ -1356,14 +1427,24 @@
     }
   }
 
-  // Función para poblar próxima mantención
-  function poblarSelectProximaMantencion() {
-    const fechaActual = new Date();
-    const fechaProxima = new Date(fechaActual);
-    fechaProxima.setMonth(fechaProxima.getMonth() + 3);
+  // Función para calcular próxima mantención en KM (kilometraje actual + 5000)
+  function calcularProximaMantencionKM() {
+    const kilometrajeInput = document.getElementById('kilometraje');
+    const proximaMantencionInput = document.getElementById('proxima_mantencion_km');
     
-    const fechaInput = document.getElementById('proxima_mantencion');
-    fechaInput.valueAsDate = fechaProxima;
+    // Agregar event listener para calcular automáticamente
+    kilometrajeInput.addEventListener('input', function() {
+      const kilometrajeActual = parseInt(this.value) || 0;
+      if (kilometrajeActual > 0) {
+        const proximaKM = kilometrajeActual + 5000;
+        proximaMantencionInput.value = proximaKM;
+      } else {
+        proximaMantencionInput.value = '';
+      }
+    });
+    
+    // También permitir edición manual
+    console.log('Calculadora de próxima mantención configurada');
   }
 
   // Función para crear una fila de checklist
@@ -1556,7 +1637,7 @@
     
     document.getElementById('fecha-header').textContent = todayDisplay;
     
-    poblarSelectProximaMantencion();
+    console.log('Fecha actual establecida');
   }
 
   // Función para autocompletar supervisor
@@ -1694,6 +1775,15 @@
       }
     }
     
+    // Validar próxima mantención KM
+    const proximaMantencionInput = document.getElementById('proxima_mantencion_km');
+    const proximaMantencionKM = proximaMantencionInput.value ? parseInt(proximaMantencionInput.value) : 0;
+    if (proximaMantencionKM <= 0) {
+      mostrarError('El campo "PRÓXIMA MANTENCIÓN" debe ser un número positivo en KM');
+      proximaMantencionInput.focus();
+      return;
+    }
+    
     // Obtener el número OT (será el próximo ID)
     const otNumero = siguienteOT;
     const otFormateado = otNumero.toString().padStart(4, '0');
@@ -1723,7 +1813,7 @@
       numero_ot: otNumero,
       empresa_asociada: document.getElementById('empresa_asociada').value,
       vehiculo: document.getElementById('vehiculo').value,
-      proxima_mantencion: document.getElementById('proxima_mantencion').value,
+      proxima_mantencion_km: proximaMantencionKM, // Cambiado a proxima_mantencion_km
       torque_del_izq: document.getElementById('torque-del-izq-input').value,
       torque_del_der: document.getElementById('torque-del-der-input').value,
       torque_tra_izq: document.getElementById('torque-tra-izq-input').value,
@@ -1790,6 +1880,7 @@
       document.getElementById('nombre_mecanico').selectedIndex = 0;
       document.getElementById('patente').selectedIndex = 0;
       document.getElementById('kilometraje').value = '';
+      document.getElementById('proxima_mantencion_km').value = '';
       document.getElementById('observaciones_rodado').value = '';
       document.getElementById('observaciones_frenos').value = '';
       document.getElementById('observaciones_transmision').value = '';
@@ -1855,6 +1946,9 @@
       
       // Configurar autocomplete
       setupAutocomplete();
+      
+      // Configurar cálculo de próxima mantención KM
+      calcularProximaMantencionKM();
       
       // Inicializar objeto de datos
       window.checklistData = {};
