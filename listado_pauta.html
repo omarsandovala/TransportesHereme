@@ -1068,6 +1068,7 @@
         const torqueDel = pauta.torque_del_izq ? `${pauta.torque_del_izq}/${pauta.torque_del_der}` : '-';
         const torqueTra = pauta.torque_tra_izq ? `${pauta.torque_tra_izq}/${pauta.torque_tra_der}` : '-';
         
+        // MODIFICADO: Eliminado botón "Ver", solo queda "Editar"
         tr.innerHTML = `
           <td>${numeroOT}</td>
           <td><strong>${patente}</strong></td>
@@ -1081,9 +1082,6 @@
           <td class="actions-cell">
             <button class="btn btn-info btn-sm" onclick="editarPauta(${pauta.id})">
               <i class="fas fa-edit"></i> Editar
-            </button>
-            <button class="btn btn-warning btn-sm" onclick="verDetalles(${pauta.id})">
-              <i class="fas fa-eye"></i> Ver
             </button>
           </td>
         `;
@@ -1319,7 +1317,7 @@
           <tr>
             <td class="label" style="font-weight: bold; background: #e5e7eb; width: 160px; padding: 10px; border: 1px solid #d1d5db;">NOMBRE MECÁNICO:</td>
             <td style="padding: 10px; border: 1px solid #d1d5db; background-color: #f8f9fa;">
-              <select id="edit-responsable" style="width: 100%;">
+              <select id="edit-responsable" style="width: 100%;" onchange="actualizarFirmaMecanicoEdit()">
                 <option value="">Seleccione un mecánico</option>
               </select>
             </td>
@@ -1351,9 +1349,12 @@
             </td>
           </tr>
           <tr>
-            <td class="label" style="font-weight: bold; background: #e5e7eb; width: 160px; padding: 10px; border: 1px solid #d1d5db;">PROXIMA MANTENCIÓN:</td>
+            <td class="label" style="font-weight: bold; background: #e5e7eb; width: 160px; padding: 10px; border: 1px solid #d1d5db;">PRÓXIMA MANTENCIÓN:</td>
             <td colspan="3" style="padding: 10px; border: 1px solid #d1d5db; background-color: #f8f9fa;">
-              <input type="date" id="edit-proxima_mantencion" style="width: 100%;" value="${pauta.proxima_mantencion ? new Date(pauta.proxima_mantencion).toISOString().split('T')[0] : ''}">
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <input type="number" id="edit-proxima_mantencion_km" style="flex: 1;" min="0" step="1" value="${pauta.proxima_mantencion_km || (pauta.kilometraje ? parseInt(pauta.kilometraje) + 5000 : '')}">
+                <span style="font-weight: bold; white-space: nowrap;">KM</span>
+              </div>
             </td>
           </tr>
         </table>
@@ -1703,6 +1704,39 @@
       
       // Establecer valores en los selects
       establecerValoresEdit(pauta);
+      
+      // Configurar cálculo automático de próxima mantención KM
+      configurarCalculoProximaMantencionKM();
+    }
+
+    // Función para actualizar la firma del mecánico cuando se cambia el nombre
+    function actualizarFirmaMecanicoEdit() {
+      const responsableSelect = document.getElementById('edit-responsable');
+      const firmaMecanicoInput = document.getElementById('edit-firma_mecanico');
+      
+      if (responsableSelect && firmaMecanicoInput) {
+        const selectedValue = responsableSelect.value;
+        if (selectedValue) {
+          firmaMecanicoInput.value = selectedValue;
+        }
+      }
+    }
+
+    // Configurar cálculo de próxima mantención KM en edición
+    function configurarCalculoProximaMantencionKM() {
+      const kilometrajeInput = document.getElementById('edit-kilometraje');
+      const proximaMantencionInput = document.getElementById('edit-proxima_mantencion_km');
+      
+      if (kilometrajeInput && proximaMantencionInput) {
+        // Calcular automáticamente cuando cambia el kilometraje
+        kilometrajeInput.addEventListener('input', function() {
+          const kilometrajeActual = parseInt(this.value) || 0;
+          if (kilometrajeActual > 0) {
+            const proximaKM = kilometrajeActual + 5000;
+            proximaMantencionInput.value = proximaKM;
+          }
+        });
+      }
     }
 
     // Cargar datos para formulario
@@ -1795,6 +1829,12 @@
       const firmaMecanico = document.getElementById('edit-firma_mecanico');
       if (firmaMecanico && !firmaMecanico.value && mecanicoValue) {
         firmaMecanico.value = mecanicoValue;
+      }
+      
+      // Establecer próxima mantención KM
+      const proximaMantencionInput = document.getElementById('edit-proxima_mantencion_km');
+      if (!proximaMantencionInput.value && pauta.kilometraje) {
+        proximaMantencionInput.value = parseInt(pauta.kilometraje) + 5000;
       }
     }
 
@@ -1978,7 +2018,7 @@
           vehiculo: document.getElementById('edit-vehiculo').value,
           kilometraje: parseInt(document.getElementById('edit-kilometraje').value) || 0,
           empresa_asociada: document.getElementById('edit-empresa_asociada').value,
-          proxima_mantencion: document.getElementById('edit-proxima_mantencion').value,
+          proxima_mantencion_km: parseInt(document.getElementById('edit-proxima_mantencion_km').value) || 0,
           torque_del_izq: document.getElementById('edit-torque-del-izq-input').value,
           torque_del_der: document.getElementById('edit-torque-del-der-input').value,
           torque_tra_izq: document.getElementById('edit-torque-tra-izq-input').value,
@@ -2072,11 +2112,6 @@
       window.print();
       document.body.innerHTML = originalContents;
       cargarPautas(); // Recargar datos
-    }
-
-    // Ver detalles de la pauta
-    async function verDetalles(id) {
-      window.open(`prueba.html?view=${id}`, '_blank');
     }
 
     // Cerrar modal
