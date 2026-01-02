@@ -1086,27 +1086,17 @@
       </div>
 
       <div class="section">
-        <h3 class="section-title"><i class="fas fa-signature"></i> OBSERVACIONES Y FIRMAS</h3>
+        <h3 class="section-title"><i class="fas fa-signature"></i> FIRMA DEL MECÁNICO</h3>
         
         <div style="margin-top: 20px;">
           <label for="observaciones_finales">OBSERVACIONES DEL MANTENEDOR:</label>
           <textarea id="observaciones_finales" rows="4" placeholder="Observaciones finales del mantenedor..."></textarea>
         </div>
         
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-top: 30px;">
+        <div style="margin-top: 30px; padding-top: 15px; border-top: 2px solid #d1d5db;">
           <div>
-            <label for="firma_mecanico">NOMBRE MECÁNICO:</label>
+            <label for="firma_mecanico">NOMBRE Y FIRMA DEL MECÁNICO:</label>
             <input type="text" id="firma_mecanico" style="width: 100%;" readonly>
-            <div style="height: 2px; background: #2d3748; margin-top: 30px;"></div>
-            <div style="text-align: center; margin-top: 5px; color: #718096;">FIRMA</div>
-          </div>
-          
-          <div>
-            <label for="firma_supervisor">FIRMA SUPERVISOR:</label>
-            <div class="autocomplete-container">
-              <input type="text" id="firma_supervisor" style="width: 100%;" placeholder="Buscar supervisor...">
-              <div id="autocomplete-list" class="autocomplete-items"></div>
-            </div>
             <div style="height: 2px; background: #2d3748; margin-top: 30px;"></div>
             <div style="text-align: center; margin-top: 5px; color: #718096;">FIRMA</div>
           </div>
@@ -1139,7 +1129,7 @@
       window.history.back();
     } else {
       // Si no hay historial, redirigir a una página por defecto
-      window.location.href = 'index.html'; // Cambia 'index.html' por la URL de tu página principal
+      window.location.href = 'index.html';
     }
   }
 
@@ -1153,7 +1143,6 @@
   // Variables globales
   let mecanicos = [];
   let maquinas = [];
-  let supervisores = [];
   let siguienteOT = 1;
 
   // Datos completos de los items del checklist
@@ -1289,80 +1278,6 @@
         maquinas = maquinasData || [];
       }
       
-      // Cargar supervisores (de diferentes tablas)
-      supervisores = [];
-      
-      // 1. Cargar conductores
-      try {
-        const { data: conductoresData, error: errorConductores } = await supabaseClient
-          .from('conductores')
-          .select('id, nombre')
-          .order('nombre');
-        
-        if (!errorConductores && conductoresData) {
-          conductoresData.forEach(conductor => {
-            supervisores.push({
-              id: conductor.id,
-              nombre: conductor.nombre,
-              cargo: 'Conductor'
-            });
-          });
-        }
-      } catch (error) {
-        console.warn('No se pudo cargar conductores:', error);
-      }
-      
-      // 2. Cargar gerentes de operaciones
-      try {
-        const { data: gerentesData, error: errorGerentes } = await supabaseClient
-          .from('gerentes_operaciones')
-          .select('id, nombre')
-          .order('nombre');
-        
-        if (!errorGerentes && gerentesData) {
-          gerentesData.forEach(gerente => {
-            supervisores.push({
-              id: gerente.id,
-              nombre: gerente.nombre,
-              cargo: 'Gerente de Operaciones'
-            });
-          });
-        }
-      } catch (error) {
-        console.warn('No se pudo cargar gerentes de operaciones:', error);
-      }
-      
-      // 3. Cargar jefes de mantenimiento
-      try {
-        const { data: jefesData, error: errorJefes } = await supabaseClient
-          .from('jefes_mantenimiento')
-          .select('id, nombre')
-          .order('nombre');
-        
-        if (!errorJefes && jefesData) {
-          jefesData.forEach(jefe => {
-            supervisores.push({
-              id: jefe.id,
-              nombre: jefe.nombre,
-              cargo: 'Jefe de Mantenimiento'
-            });
-          });
-        }
-      } catch (error) {
-        console.warn('No se pudo cargar jefes de mantenimiento:', error);
-      }
-      
-      // 4. Agregar mecánicos como posibles supervisores
-      if (mecanicos && mecanicos.length > 0) {
-        mecanicos.forEach(mecanico => {
-          supervisores.push({
-            id: mecanico.id,
-            nombre: mecanico.nombre,
-            cargo: 'Mecánico'
-          });
-        });
-      }
-      
       // Poblar selects
       poblarSelectMecanicos();
       poblarSelectPatentes();
@@ -1370,7 +1285,6 @@
       console.log('Datos cargados:', {
         mecanicos: mecanicos.length,
         maquinas: maquinas.length,
-        supervisores: supervisores.length,
         siguienteOT: siguienteOT
       });
       
@@ -1640,49 +1554,6 @@
     console.log('Fecha actual establecida');
   }
 
-  // Función para autocompletar supervisor
-  function setupAutocomplete() {
-    const input = document.getElementById('firma_supervisor');
-    const autocompleteList = document.getElementById('autocomplete-list');
-    
-    input.addEventListener('input', function() {
-      const searchTerm = this.value.toLowerCase();
-      autocompleteList.innerHTML = '';
-      
-      if (searchTerm.length < 2) {
-        autocompleteList.style.display = 'none';
-        return;
-      }
-      
-      const filtered = supervisores.filter(persona => 
-        persona.nombre.toLowerCase().includes(searchTerm)
-      );
-      
-      if (filtered.length > 0) {
-        filtered.forEach(persona => {
-          const div = document.createElement('div');
-          div.className = 'autocomplete-item';
-          div.innerHTML = `<strong>${persona.nombre}</strong> <span style="color: #666; font-size: 0.9em;">(${persona.cargo})</span>`;
-          div.addEventListener('click', function() {
-            input.value = persona.nombre;
-            autocompleteList.innerHTML = '';
-            autocompleteList.style.display = 'none';
-          });
-          autocompleteList.appendChild(div);
-        });
-        autocompleteList.style.display = 'block';
-      } else {
-        autocompleteList.style.display = 'none';
-      }
-    });
-    
-    document.addEventListener('click', function(e) {
-      if (!e.target.closest('.autocomplete-container')) {
-        autocompleteList.style.display = 'none';
-      }
-    });
-  }
-
   // Mostrar mensaje de error
   function mostrarError(mensaje) {
     const errorElement = document.getElementById('error-message');
@@ -1796,24 +1667,23 @@
     
     // Crear objeto de datos para Supabase
     const datos = {
-      tipo: 'pauta_5000', // Cambiado a 'pauta_5000' según lo solicitado
+      tipo: 'pauta_5000',
       tipo_mantenimiento: 'Preventivo',
       patente: document.getElementById('patente').value,
       fecha: document.getElementById('fecha').value,
-      hora: hora24h, // Usar hora en formato 24h
+      hora: hora24h,
       kilometraje: parseInt(document.getElementById('kilometraje').value) || 0,
       responsable: document.getElementById('nombre_mecanico').value,
       realizado: true,
       descripcion: 'Pauta preventiva de sistemas críticos cada 5000KM',
       hecho_por: document.getElementById('nombre_mecanico').value,
-      autorizado_por: document.getElementById('firma_supervisor').value || '',
       cargo_hecho_por: 'Mecánico',
       
       // Nuevos campos (usando las columnas existentes)
       numero_ot: otNumero,
       empresa_asociada: document.getElementById('empresa_asociada').value,
       vehiculo: document.getElementById('vehiculo').value,
-      proxima_mantencion_km: proximaMantencionKM, // Cambiado a proxima_mantencion_km
+      proxima_mantencion_km: proximaMantencionKM,
       torque_del_izq: document.getElementById('torque-del-izq-input').value,
       torque_del_der: document.getElementById('torque-del-der-input').value,
       torque_tra_izq: document.getElementById('torque-tra-izq-input').value,
@@ -1829,12 +1699,11 @@
       observaciones_otros: document.getElementById('observaciones_otros').value,
       observaciones_finales: document.getElementById('observaciones_finales').value,
       firma_mecanico: document.getElementById('firma_mecanico').value,
-      firma_supervisor: document.getElementById('firma_supervisor').value,
       
       // Usar las columnas JSON existentes
-      insumos: boltsState, // Columna insumos (jsonb)
-      checklist_data: datosChecklist, // Columna checklist_data (jsonb)
-      verificacion_tornillos: boltsState, // Columna verificacion_tornillos (jsonb)
+      insumos: boltsState,
+      checklist_data: datosChecklist,
+      verificacion_tornillos: boltsState,
       created_at: new Date().toISOString()
     };
     
@@ -1862,7 +1731,6 @@
       console.log('Guardado exitoso:', data);
 
       // Actualizar el número OT para el siguiente formulario
-      // Al guardar, el próximo ID será mayor
       await obtenerSiguienteOT();
 
       mostrarExito(`Pauta preventiva guardada correctamente con OT ${otFormateado}`);
@@ -1890,7 +1758,6 @@
       document.getElementById('observaciones_otros').value = '';
       document.getElementById('observaciones_finales').value = '';
       document.getElementById('firma_mecanico').value = '';
-      document.getElementById('firma_supervisor').value = '';
       document.getElementById('obs-delantero').value = '';
       document.getElementById('obs-trasero').value = '';
       document.getElementById('vehiculo').value = '';
@@ -1943,9 +1810,6 @@
       
       // Poblar checklists
       poblarTodosChecklists();
-      
-      // Configurar autocomplete
-      setupAutocomplete();
       
       // Configurar cálculo de próxima mantención KM
       calcularProximaMantencionKM();
