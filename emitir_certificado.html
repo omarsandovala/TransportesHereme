@@ -31,6 +31,7 @@
             margin-bottom: 30px;
             padding-bottom: 20px;
             border-bottom: 1px solid #ddd;
+            position: relative;
         }
         
         h1 {
@@ -88,12 +89,17 @@
             color: #2c3e50;
         }
         
-        input, select {
+        input, select, textarea {
             width: 100%;
             padding: 12px;
             border: 1px solid #ddd;
             border-radius: 4px;
             font-size: 16px;
+        }
+        
+        textarea {
+            resize: vertical;
+            min-height: 60px;
         }
         
         button {
@@ -169,16 +175,16 @@
             font-size: 16px;
         }
         
-        .torque-review input {
-            width: auto;
-            padding: 5px 10px;
+        .torque-review textarea {
+            width: 100%;
+            padding: 10px;
             font-size: 16px;
             font-weight: bold;
             text-align: center;
             border: 1px solid #ddd;
             border-radius: 4px;
-            display: inline-block;
-            margin: 0 5px;
+            background-color: white;
+            margin-bottom: 10px;
         }
         
         .certificate-details {
@@ -244,6 +250,19 @@
             background-color: #c0392b;
         }
         
+        .back-btn {
+            background-color: #95a5a6;
+            width: auto;
+            padding: 10px 20px;
+            position: absolute;
+            left: 0;
+            top: 0;
+        }
+        
+        .back-btn:hover {
+            background-color: #7f8c8d;
+        }
+        
         .loader {
             display: none;
             text-align: center;
@@ -294,9 +313,10 @@
                 min-height: auto;
             }
             
-            .torque-review input {
+            .torque-review textarea {
                 border: none;
                 background: transparent;
+                resize: none;
             }
         }
     </style>
@@ -304,6 +324,7 @@
 <body>
     <div class="container">
         <header>
+            <button class="back-btn" id="backBtn">← Volver al Menú</button>
             <h1>Generador de Certificado de Torque de Ruedas</h1>
             <p class="subtitle">Sistema conectado a base de datos Supabase</p>
         </header>
@@ -353,14 +374,10 @@
                     <input type="text" id="torqueNumber" placeholder="Ej: JW2018110146">
                 </div>
                 
+                <!-- NUEVO: Campo para editar toda la línea del torque -->
                 <div class="form-group">
-                    <label for="torqueValue">Valor de Torque:</label>
-                    <input type="text" id="torqueValue" value="850 Nm">
-                </div>
-                
-                <div class="form-group">
-                    <label for="torqueReview">Texto de Revisión:</label>
-                    <input type="text" id="torqueReview" value="REVISIÓN PREVENTIVO TORQUE RUEDAS">
+                    <label for="torqueFullLine">Línea Completa de Torque:</label>
+                    <textarea id="torqueFullLine" placeholder="Ej: *REVISIÓN PREVENTIVO TORQUE RUEDAS 850 Nm DE TORQUE*">*REVISIÓN PREVENTIVO TORQUE RUEDAS 850 Nm DE TORQUE*</textarea>
                 </div>
                 
                 <div class="form-group">
@@ -384,8 +401,6 @@
             </div>
             
             <div class="preview-section">
-                <!-- Se eliminó el título "Vista Previa del Certificado" -->
-                
                 <div class="certificate" id="certificate">
                     <div class="logo-header">
                         <div id="logoContainer">
@@ -403,8 +418,9 @@
                     <div class="certificate-content">
                         <p>Certificamos que el vehículo, PATENTE: <span id="certPlate">SPHR-72</span> de LA EMPRESA, <strong id="certCompany">HERRAMIENTAS, REPUESTOS, SERVICIOS MINEROS HRM LTDA</strong> Rut: <span id="certRut">76.058.491-6</span>, realizó REVISIÓN DE TORQUES DE TUERCAS DE RUEDAS, el cual se encuentra apto para actividades y servicios mineros según las normas establecidas por la marca.</p>
                         
+                        <!-- MODIFICADO: Ahora muestra toda la línea como texto editable -->
                         <div class="torque-review">
-                            *<span id="certTorqueReview">REVISIÓN PREVENTIVO TORQUE RUEDAS</span> <span id="certTorque">850 Nm</span> DE TORQUE*
+                            <textarea id="certTorqueFullLine" rows="2">*REVISIÓN PREVENTIVO TORQUE RUEDAS 850 Nm DE TORQUE*</textarea>
                         </div>
                         
                         <div class="certificate-details">
@@ -475,8 +491,7 @@
         const vehicleModelInput = document.getElementById('vehicleModel');
         const mileageInput = document.getElementById('mileage');
         const torqueNumberInput = document.getElementById('torqueNumber');
-        const torqueValueInput = document.getElementById('torqueValue');
-        const torqueReviewInput = document.getElementById('torqueReview');
+        const torqueFullLineInput = document.getElementById('torqueFullLine'); // NUEVO
         const clientNameInput = document.getElementById('clientName');
         const performedBySelect = document.getElementById('performedBy');
         const maintenanceChiefInput = document.getElementById('maintenanceChief');
@@ -486,8 +501,7 @@
         const certPlate = document.getElementById('certPlate');
         const certCompany = document.getElementById('certCompany');
         const certRut = document.getElementById('certRut');
-        const certTorque = document.getElementById('certTorque');
-        const certTorqueReview = document.getElementById('certTorqueReview');
+        const certTorqueFullLine = document.getElementById('certTorqueFullLine'); // NUEVO
         const certClient = document.getElementById('certClient');
         const certVehicle = document.getElementById('certVehicle');
         const certPlate2 = document.getElementById('certPlate2');
@@ -503,6 +517,7 @@
         const updateBtn = document.getElementById('updateBtn');
         const printBtn = document.getElementById('printBtn');
         const resetBtn = document.getElementById('resetBtn');
+        const backBtn = document.getElementById('backBtn'); // NUEVO
         
         // ============================================
         // FUNCIONES DE UTILIDAD
@@ -733,8 +748,7 @@
             const plateValue = vehiclePlateSelect.value || '';
             const companyValue = companyNameInput.value || '';
             const rutValue = companyRutInput.value || '';
-            const torqueValue = torqueValueInput.value || '';
-            const torqueReviewValue = torqueReviewInput.value || '';
+            const torqueFullLineValue = torqueFullLineInput.value || ''; // NUEVO
             const clientValue = clientNameInput.value || '';
             const vehicleValue = vehicleModelInput.value || '';
             const mileageValue = mileageInput.value || '';
@@ -746,8 +760,7 @@
             certPlate.textContent = plateValue;
             certCompany.textContent = companyValue.toUpperCase();
             certRut.textContent = rutValue;
-            certTorque.textContent = torqueValue;
-            certTorqueReview.textContent = torqueReviewValue.toUpperCase();
+            certTorqueFullLine.value = torqueFullLineValue; // NUEVO
             certClient.textContent = clientValue.toUpperCase();
             certVehicle.textContent = vehicleValue.toUpperCase();
             certPlate2.textContent = plateValue;
@@ -769,8 +782,7 @@
             vehicleModelInput.value = "";
             mileageInput.value = "";
             torqueNumberInput.value = "";
-            torqueValueInput.value = "850 Nm";
-            torqueReviewInput.value = "REVISIÓN PREVENTIVO TORQUE RUEDAS";
+            torqueFullLineInput.value = "*REVISIÓN PREVENTIVO TORQUE RUEDAS 850 Nm DE TORQUE*"; // NUEVO
             clientNameInput.value = "TRANSPORTES HEREME";
             performedBySelect.value = "";
             maintenanceChiefInput.value = "JUAN SEPULVEDA C";
@@ -783,6 +795,12 @@
         
         function printCertificate() {
             window.print();
+        }
+        
+        function goBackToMenu() {
+            // Cambiar a la página del menú principal
+            // Ajusta esta URL según la ubicación de tu página de menú
+            window.location.href = 'menu.html';
         }
         
         // ============================================
@@ -812,7 +830,7 @@
                 setupVehicleModelListener();
                 
                 // Configurar eventos del formulario
-                const inputs = document.querySelectorAll('.form-section input, .form-section select');
+                const inputs = document.querySelectorAll('.form-section input, .form-section select, .form-section textarea');
                 inputs.forEach(input => {
                     if (input.id !== 'date') {
                         input.addEventListener('input', updateCertificate);
@@ -820,9 +838,15 @@
                     }
                 });
                 
+                // Configurar evento para el textarea del certificado (edición directa)
+                certTorqueFullLine.addEventListener('input', function() {
+                    torqueFullLineInput.value = this.value;
+                });
+                
                 updateBtn.addEventListener('click', updateCertificate);
                 printBtn.addEventListener('click', printCertificate);
                 resetBtn.addEventListener('click', resetValues);
+                backBtn.addEventListener('click', goBackToMenu); // NUEVO
                 
                 // Cargar logo
                 loadLogo();
